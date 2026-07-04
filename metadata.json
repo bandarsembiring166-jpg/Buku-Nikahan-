@@ -1,0 +1,6 @@
+{
+  "name": "Tabungan Bandar & Selly",
+  "description": "Menabung Bersama Bandar & Selly Menuju Hari Bahagia - Target Rp 20.000.000",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

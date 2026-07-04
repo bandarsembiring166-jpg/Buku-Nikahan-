@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "AppConfig": {
+      "title": "AppConfig",
+      "description": "Configuration for the couple saving tracker.",
+      "type": "object",
+      "properties": {
+        "coupleName1": {
+          "type": "string"
+        },
+        "coupleName2": {
+          "type": "string"
+        },
+        "targetAmount": {
+          "type": "number"
+        },
+        "targetDate": {
+          "type": "string"
+        },
+        "photoUrl": {
+          "type": "string"
+        }
+      },
+      "required": ["coupleName1", "coupleName2", "targetAmount", "targetDate", "photoUrl"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A single saving contribution.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "depositor": {
+          "type": "string",
+          "enum": ["Bandar", "Selly"]
+        },
+        "category": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        }
+      },
+      "required": ["amount", "depositor", "category", "note", "date"]
+    }
+  },
+  "firestore": {
+    "config/main": {
+      "schema": "AppConfig",
+      "description": "The central configuration document."
+    },
+    "transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "The list of savings transactions."
+    }
+  }
+}

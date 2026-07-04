@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable validation primitives
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // AppConfig validator
+    function isValidAppConfig(data) {
+      return data.keys().hasAll(['coupleName1', 'coupleName2', 'targetAmount', 'targetDate', 'photoUrl'])
+        && data.keys().size() == 5
+        && data.coupleName1 is string && data.coupleName1.size() <= 100
+        && data.coupleName2 is string && data.coupleName2.size() <= 100
+        && (data.targetAmount is int || data.targetAmount is float) && data.targetAmount >= 0
+        && data.targetDate is string && data.targetDate.size() <= 50
+        && data.photoUrl is string && data.photoUrl.size() <= 2000;
+    }
+
+    // Transaction validator
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['amount', 'depositor', 'category', 'note', 'date'])
+        && data.keys().size() == 5
+        && (data.amount is int || data.amount is float) && data.amount >= 0
+        && data.depositor is string && (data.depositor == 'Bandar' || data.depositor == 'Selly')
+        && data.category is string && data.category.size() <= 100
+        && data.note is string && data.note.size() <= 500
+        && data.date is string && data.date.size() <= 100;
+    }
+
+    // Config Collection Rules
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if configId == 'main' && isValidAppConfig(incoming());
+    }
+
+    // Transactions Collection Rules
+    match /transactions/{transactionId} {
+      allow read: if true;
+      allow create: if isValidId(transactionId) && isValidTransaction(incoming());
+      allow update: if isValidId(transactionId) && isValidTransaction(incoming());
+      allow delete: if isValidId(transactionId);
+    }
+  }
+}
