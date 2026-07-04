@@ -27,5 +27,6 @@ export interface GalleryPhoto {
   id: string;
   url: string;
   createdAt: string; // ISO String
+  storagePath?: string;
 }
 

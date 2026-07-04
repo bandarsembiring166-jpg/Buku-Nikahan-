@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // Configuration loaded from firebase-applet-config.json
 const firebaseConfig = {
@@ -19,6 +20,9 @@ export const db = initializeFirestore(
   {}, 
   "ai-studio-tabunganbandarse-3d42ed54-4c4b-462a-acf1-abdc76c6bddc"
 );
+
+export const storage = getStorage(app);
+
 
 export enum OperationType {
   CREATE = 'create',

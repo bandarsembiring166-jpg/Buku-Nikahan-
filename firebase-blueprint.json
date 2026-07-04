@@ -57,6 +57,9 @@
         },
         "createdAt": {
           "type": "string"
+        },
+        "storagePath": {
+          "type": "string"
         }
       },
       "required": ["url", "createdAt"]
