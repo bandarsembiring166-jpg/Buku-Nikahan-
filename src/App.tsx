@@ -127,8 +127,16 @@ export default function App() {
     const unsubscribeConfig = onSnapshot(configDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as AppConfig;
+        
+        const localBankName = localStorage.getItem('bankName');
+        const localAccountNumber = localStorage.getItem('accountNumber');
+        const localAccountName = localStorage.getItem('accountName');
+
         const mergedData: AppConfig = {
           ...DEFAULT_CONFIG,
+          bankName: localBankName || DEFAULT_CONFIG.bankName,
+          accountNumber: localAccountNumber || DEFAULT_CONFIG.accountNumber,
+          accountName: localAccountName || DEFAULT_CONFIG.accountName,
           ...data
         };
         setConfig(mergedData);
