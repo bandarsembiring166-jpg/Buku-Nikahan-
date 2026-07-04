@@ -67,6 +67,22 @@ const DEFAULT_CONFIG: AppConfig = {
   accountName: 'Bandar Sembiring'
 };
 
+const getInitialConfig = (): AppConfig => {
+  if (typeof window !== 'undefined') {
+    const localBankName = localStorage.getItem('bankName');
+    const localAccountNumber = localStorage.getItem('accountNumber');
+    const localAccountName = localStorage.getItem('accountName');
+    
+    return {
+      ...DEFAULT_CONFIG,
+      bankName: localBankName || DEFAULT_CONFIG.bankName,
+      accountNumber: localAccountNumber || DEFAULT_CONFIG.accountNumber,
+      accountName: localAccountName || DEFAULT_CONFIG.accountName,
+    };
+  }
+  return DEFAULT_CONFIG;
+};
+
 interface HeartConfetti {
   id: string;
   x: number;
@@ -77,7 +93,7 @@ interface HeartConfetti {
 }
 
 export default function App() {
-  const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
+  const [config, setConfig] = useState<AppConfig>(getInitialConfig);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,6 +104,12 @@ export default function App() {
   const [confettis, setConfettis] = useState<HeartConfetti[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Inline account editing states
+  const [isEditingAccount, setIsEditingAccount] = useState(false);
+  const [editBankName, setEditBankName] = useState('');
+  const [editAccountNumber, setEditAccountNumber] = useState('');
+  const [editAccountName, setEditAccountName] = useState('');
 
   // Temp form states for settings
   const [tempName1, setTempName1] = useState(config.coupleName1);
@@ -119,6 +141,11 @@ export default function App() {
         setTempBankName(mergedData.bankName);
         setTempAccountNumber(mergedData.accountNumber);
         setTempAccountName(mergedData.accountName);
+
+        // Keep localStorage updated in real-time
+        if (mergedData.bankName) localStorage.setItem('bankName', mergedData.bankName);
+        if (mergedData.accountNumber) localStorage.setItem('accountNumber', mergedData.accountNumber);
+        if (mergedData.accountName) localStorage.setItem('accountName', mergedData.accountName);
       } else {
         // Create the initial config document if it doesn't exist
         setDoc(configDocRef, DEFAULT_CONFIG).catch((error) => {
@@ -337,6 +364,44 @@ export default function App() {
     });
   };
 
+  const handleStartEditAccount = () => {
+    setEditBankName(config.bankName || 'Bank Syariah Indonesia (BSI)');
+    setEditAccountNumber(config.accountNumber || '7141234567');
+    setEditAccountName(config.accountName || 'Bandar Sembiring');
+    setIsEditingAccount(true);
+  };
+
+  const handleSaveAccount = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const bank = editBankName.trim() || 'Bank Syariah Indonesia (BSI)';
+    const accNum = editAccountNumber.trim() || '7141234567';
+    const accName = editAccountName.trim() || 'Bandar Sembiring';
+
+    // Save to localStorage
+    localStorage.setItem('bankName', bank);
+    localStorage.setItem('accountNumber', accNum);
+    localStorage.setItem('accountName', accName);
+
+    // Update config state instantly
+    const updatedConfig: AppConfig = {
+      ...config,
+      bankName: bank,
+      accountNumber: accNum,
+      accountName: accName
+    };
+    setConfig(updatedConfig);
+
+    try {
+      const configDocRef = doc(db, 'config', 'main');
+      await setDoc(configDocRef, updatedConfig);
+      setIsEditingAccount(false);
+      triggerConfetti();
+    } catch (err) {
+      console.error('Gagal menyimpan ke Firestore, tetap disimpan secara lokal:', err);
+      setIsEditingAccount(false);
+    }
+  };
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     const newTarget = parseFloat(tempTarget);
@@ -474,7 +539,7 @@ export default function App() {
             </div>
 
             {/* Informasi Rekening Bersama Card */}
-            <div className="mt-5 mx-2 p-4 rounded-2xl bg-amber-50/30 border border-rose-100/40 text-left relative overflow-hidden shadow-xs">
+            <div id="joint-account-card" className="mt-5 mx-2 p-4 rounded-2xl bg-rose-50/40 border border-rose-100/50 text-left relative overflow-hidden shadow-xs">
               {/* Background soft glowing heart deco */}
               <div className="absolute -right-2 -bottom-2 text-rose-200/10 text-6xl pointer-events-none font-bold select-none">
                 💝
@@ -484,65 +549,154 @@ export default function App() {
                 <div className="p-1.5 bg-rose-50 rounded-lg text-rose-500 border border-rose-100/50">
                   <Copy className="h-3.5 w-3.5" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <h3 className="text-[11px] font-black text-rose-900 uppercase tracking-wider">Informasi Rekening Bersama</h3>
                   <p className="text-[9px] text-rose-500/70 font-semibold leading-none">Gunakan rekening ini untuk melakukan setor tabungan bersama</p>
                 </div>
+                {!isEditingAccount && (
+                  <button
+                    id="btn-edit-rekening"
+                    type="button"
+                    onClick={handleStartEditAccount}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-rose-100/70 hover:bg-rose-100 text-rose-700 hover:text-rose-800 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
+                    title="Edit Informasi Rekening"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                    <span>Edit</span>
+                  </button>
+                )}
               </div>
 
-              <div className="space-y-2 bg-white/70 backdrop-blur-xs p-3 rounded-xl border border-rose-100/30 relative z-10">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-rose-600 font-bold text-[11px]">Bank</span>
-                  <span className="font-extrabold text-rose-950 text-[11px]">{config.bankName || 'Bank Syariah Indonesia (BSI)'}</span>
-                </div>
-                
-                <div className="flex justify-between items-center text-xs border-t border-rose-50/40 pt-2">
-                  <span className="text-rose-600 font-bold text-[11px]">Atas Nama (A/N)</span>
-                  <span className="font-extrabold text-rose-950 text-[11px]">{config.accountName || 'Bandar Sembiring'}</span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-rose-50/40 pt-2">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] text-rose-400 font-bold uppercase tracking-wider leading-none">Nomor Rekening</span>
-                    <span className="font-mono text-sm font-extrabold text-rose-900 tracking-wider mt-0.5 select-all">
-                      {config.accountNumber || '7141234567'}
+              {isEditingAccount ? (
+                <form id="joint-account-edit-form" onSubmit={handleSaveAccount} className="space-y-3 bg-white/85 backdrop-blur-xs p-3.5 rounded-xl border border-rose-100/40 relative z-10 shadow-inner">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-rose-100/30">
+                    <span className="text-[10px] font-extrabold text-rose-900 uppercase tracking-wider flex items-center gap-1">
+                      <span>📝 Pengaturan Rekening</span>
                     </span>
+                    <button
+                      id="btn-inline-cancel-rekening"
+                      type="button"
+                      onClick={() => setIsEditingAccount(false)}
+                      className="text-rose-400 hover:text-rose-600 font-extrabold text-[10px] transition-colors cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div>
+                      <label htmlFor="card-edit-bank" className="block text-[9px] font-extrabold text-rose-500 uppercase tracking-wider mb-1">Nama Bank</label>
+                      <input
+                        id="card-edit-bank"
+                        type="text"
+                        value={editBankName}
+                        onChange={(e) => setEditBankName(e.target.value)}
+                        placeholder="Contoh: Bank Syariah Indonesia (BSI)"
+                        className="w-full px-2.5 py-1.5 bg-white border border-rose-100 rounded-lg text-rose-950 text-xs focus:border-rose-300 focus:outline-none transition-all font-semibold"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="card-edit-name" className="block text-[9px] font-extrabold text-rose-500 uppercase tracking-wider mb-1">Nama Pemilik</label>
+                      <input
+                        id="card-edit-name"
+                        type="text"
+                        value={editAccountName}
+                        onChange={(e) => setEditAccountName(e.target.value)}
+                        placeholder="Contoh: Bandar Sembiring"
+                        className="w-full px-2.5 py-1.5 bg-white border border-rose-100 rounded-lg text-rose-950 text-xs focus:border-rose-300 focus:outline-none transition-all font-semibold"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="card-edit-number" className="block text-[9px] font-extrabold text-rose-500 uppercase tracking-wider mb-1">Nomor Rekening</label>
+                      <input
+                        id="card-edit-number"
+                        type="text"
+                        value={editAccountNumber}
+                        onChange={(e) => setEditAccountNumber(e.target.value)}
+                        placeholder="Contoh: 7141234567"
+                        className="w-full px-2.5 py-1.5 bg-white border border-rose-100 rounded-lg text-rose-950 text-xs font-mono font-bold tracking-wider focus:border-rose-300 focus:outline-none transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-1.5">
+                    <button
+                      id="btn-cancel-rekening"
+                      type="button"
+                      onClick={() => setIsEditingAccount(false)}
+                      className="flex-1 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      id="btn-save-rekening"
+                      type="submit"
+                      className="flex-1 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[11px] font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      Simpan 💾
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-2 bg-white/70 backdrop-blur-xs p-3 rounded-xl border border-rose-100/30 relative z-10">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-rose-600 font-bold text-[11px]">Bank</span>
+                    <span className="font-extrabold text-rose-950 text-[11px]">{config.bankName || 'Bank Syariah Indonesia (BSI)'}</span>
                   </div>
                   
-                  <div className="relative self-end sm:self-center">
-                    <button
-                      type="button"
-                      onClick={handleCopyAccountNumber}
-                      className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition-all shadow-sm cursor-pointer select-none"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="h-3 w-3 animate-bounce" />
-                          <span>Berhasil Disalin!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" />
-                          <span>Salin Rekening</span>
-                        </>
-                      )}
-                    </button>
+                  <div className="flex justify-between items-center text-xs border-t border-rose-50/40 pt-2">
+                    <span className="text-rose-600 font-bold text-[11px]">Atas Nama (A/N)</span>
+                    <span className="font-extrabold text-rose-950 text-[11px]">{config.accountName || 'Bandar Sembiring'}</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-rose-50/40 pt-2">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-rose-400 font-bold uppercase tracking-wider leading-none">Nomor Rekening</span>
+                      <span className="font-mono text-sm font-extrabold text-rose-900 tracking-wider mt-0.5 select-all">
+                        {config.accountNumber || '7141234567'}
+                      </span>
+                    </div>
                     
-                    <AnimatePresence>
-                      {copied && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                          className="absolute bottom-full right-0 mb-1.5 px-2 py-1 bg-rose-950 text-white text-[9px] font-extrabold rounded-md shadow-md whitespace-nowrap z-20 pointer-events-none"
-                        >
-                          Teks Disalin ke HP! 💖
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    <div className="relative self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={handleCopyAccountNumber}
+                        className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition-all shadow-sm cursor-pointer select-none"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-3 w-3 animate-bounce" />
+                            <span>Berhasil Disalin!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Salin Rekening</span>
+                          </>
+                        )}
+                      </button>
+                      
+                      <AnimatePresence>
+                        {copied && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                            className="absolute bottom-full right-0 mb-1.5 px-2 py-1 bg-rose-950 text-white text-[9px] font-extrabold rounded-md shadow-md whitespace-nowrap z-20 pointer-events-none"
+                          >
+                            Teks Disalin ke HP! 💖
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
