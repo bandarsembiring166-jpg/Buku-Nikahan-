@@ -99,8 +99,10 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'setor' | 'riwayat' | 'album' | 'milestones' | 'statistik'>('setor');
   const [showSettings, setShowSettings] = useState(false);
+  const [showAlbumModal, setShowAlbumModal] = useState(false);
+  const [activeSavingsTab, setActiveSavingsTab] = useState<'progres' | 'milestones' | 'statistik'>('progres');
+  const [activeTransactionTab, setActiveTransactionTab] = useState<'catat' | 'riwayat'>('catat');
   const [confettis, setConfettis] = useState<HeartConfetti[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -464,7 +466,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#fff8f6] via-[#fff5f6] to-[#fffaf0] py-8 px-4 flex flex-col justify-center items-center font-sans antialiased overflow-x-hidden relative">
+    <div className="min-h-screen bg-gradient-to-tr from-[#FAF5F2] via-[#FFFBF9] to-[#FAF0ED] py-8 px-4 flex flex-col justify-center items-center font-sans antialiased overflow-x-hidden relative">
       {/* Floating Confetti Layer */}
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
         <AnimatePresence>
@@ -493,80 +495,118 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      <div className="w-full max-w-lg relative z-10" id="main-container">
-        {/* Main Card */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[32px] border border-rose-100/60 shadow-xl shadow-rose-100/30 overflow-hidden transition-all duration-300">
+      {/* Elegant Header Banner */}
+      <header className="w-full text-center mb-8 relative z-10 max-w-5xl px-4">
+        <div className="absolute left-1/2 -translate-x-1/2 -top-4 w-24 h-24 bg-rose-200/20 blur-2xl rounded-full pointer-events-none"></div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/70 backdrop-blur-md border border-rose-100/50 rounded-full text-[10px] tracking-widest font-black uppercase text-rose-500/85 mb-3.5 shadow-2xs">
+          <Sparkles className="h-3 w-3 animate-pulse text-rose-400" />
+          <span>Celengan Pernikahan Digital</span>
+        </div>
+        <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-900 via-[#9E645A] to-rose-950 tracking-tight leading-tight">
+          Tabungan {config.coupleName1} & {config.coupleName2}
+        </h1>
+        <p className="text-[12px] md:text-sm text-[#8E7470] font-medium max-w-md mx-auto mt-1.5 px-2 leading-relaxed">
+          Mencatat perjalanan menabung bersama menuju mahligai rumah tangga sakinah, mawaddah, warahmah.
+        </p>
+      </header>
+
+      {/* Modern Bento CSS Grid Container */}
+      <div className="w-full max-w-5xl relative z-10 px-1 sm:px-4 mb-4" id="main-grid-container">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Header Area */}
-          <div className="relative p-6 text-center bg-gradient-to-b from-rose-50/40 to-white/10 border-b border-rose-50/50">
-            {/* Settings Trigger Gear */}
-            <button
-              id="settings-button"
-              onClick={() => setShowSettings(true)}
-              className="absolute top-5 right-5 p-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-100/50 text-rose-400 hover:text-rose-600 shadow-xs cursor-pointer transition-colors"
-              title="Pengaturan Target"
-            >
-              <Settings className="h-4.5 w-4.5" />
-            </button>
-
-            {/* Profile Picture Frame */}
-            <div className="relative mx-auto w-32 h-32 mb-4 group">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-rose-400 to-pink-500 animate-pulse blur-md opacity-20"></div>
-              <img
-                id="couple-photo"
-                src={config.photoUrl || coupleAvatar}
-                alt={`${config.coupleName1} & ${config.coupleName2}`}
-                referrerPolicy="no-referrer"
-                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md relative z-10"
-                onError={(e) => {
-                  // Fallback if URL is invalid
-                  (e.target as HTMLImageElement).src = coupleAvatar;
-                }}
-              />
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="absolute bottom-0 right-0 p-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-full border-2 border-white shadow-md z-20 cursor-pointer transition-colors"
-                title="Ganti Foto"
-              >
-                <Edit2 className="h-3 w-3" />
-              </button>
-            </div>
-
-            {/* Title */}
-            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-pink-600 to-rose-600 tracking-tight font-sans">
-              {config.coupleName1} & {config.coupleName2}
-            </h1>
-            <p className="text-rose-700/70 text-sm font-medium italic mt-1.5">
-              Menabung Bersama Menuju Hari Bahagia ✨
-            </p>
-
-            {/* Dynamic countdown banner */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-100/40 rounded-full text-rose-600 text-[11px] font-bold mt-3 shadow-xs">
-              <Calendar className="h-3.5 w-3.5" />
-              <span>{daysRemaining > 0 ? `${daysRemaining} Hari Menuju Akad Nikah 💍` : 'Semoga Menjadi Keluarga Sakinah Mawaddah Warahmah! ❤️'}</span>
-            </div>
-
-            {/* Informasi Rekening Bersama Card */}
-            <div id="joint-account-card" className="mt-5 mx-2 p-4 rounded-2xl bg-rose-50/40 border border-rose-100/50 text-left relative overflow-hidden shadow-xs">
-              {/* Background soft glowing heart deco */}
-              <div className="absolute -right-2 -bottom-2 text-rose-200/10 text-6xl pointer-events-none font-bold select-none">
-                💝
-              </div>
+          {/* LEFT COLUMN: Profil & Rekening */}
+          <div className="md:col-span-1 lg:col-span-5 flex flex-col gap-6">
+            
+            {/* BLOCK 1: FOTO & NAMA */}
+            <div id="block-foto-nama" className="relative bg-white/45 backdrop-blur-xl rounded-[32px] border border-rose-100/60 p-6 shadow-md shadow-rose-950/5 hover:shadow-lg transition-all duration-300 flex flex-col items-center text-center overflow-hidden">
+              <div className="absolute -left-10 -top-10 text-rose-100/20 text-[100px] select-none pointer-events-none font-bold">🌸</div>
+              <div className="absolute -right-10 -bottom-10 text-rose-100/20 text-[100px] select-none pointer-events-none font-bold">💍</div>
               
+              {/* Badge label */}
+              <span className="absolute left-6 top-5 text-[9px] font-mono font-extrabold tracking-widest text-rose-400/60 uppercase">01 / Profil & Album</span>
+
+              {/* Settings button top right */}
+              <button
+                id="settings-button"
+                onClick={() => setShowSettings(true)}
+                className="absolute top-4 right-4 p-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-100/50 text-rose-400 hover:text-rose-600 shadow-2xs cursor-pointer transition-colors"
+                title="Pengaturan Target"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+
+              {/* Profile image with edit overlay */}
+              <div className="relative w-36 h-36 mt-4 mb-4 group">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-rose-300 via-pink-400 to-rose-400 animate-pulse blur-md opacity-25"></div>
+                <img
+                  id="couple-photo"
+                  src={config.photoUrl || coupleAvatar}
+                  alt={`${config.coupleName1} & ${config.coupleName2}`}
+                  referrerPolicy="no-referrer"
+                  className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-md relative z-10 transition-transform duration-500 group-hover:scale-[1.03]"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = coupleAvatar;
+                  }}
+                />
+                <button 
+                  onClick={() => setShowSettings(true)}
+                  className="absolute bottom-0 right-1 p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full border border-white shadow-md z-20 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                  title="Ganti Foto"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <h2 className="text-2xl font-black text-rose-950 tracking-tight leading-tight">
+                {config.coupleName1} & {config.coupleName2}
+              </h2>
+              <p className="text-[#9E645A] text-xs font-bold italic mt-1.5">
+                Menabung Bersama Menuju Hari Bahagia ✨
+              </p>
+
+              {/* Countdown badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-rose-100/40 rounded-full text-rose-700 text-[11px] font-extrabold mt-4 shadow-3xs">
+                <Calendar className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                <span>{daysRemaining > 0 ? `${daysRemaining} Hari Menuju Akad Nikah 💍` : 'Semoga Sakinah Mawaddah Warahmah! ❤️'}</span>
+              </div>
+
+              {/* Open Album Button */}
+              <div className="w-full mt-6 border-t border-rose-100/30 pt-5 flex flex-col gap-2">
+                <button
+                  id="btn-open-album"
+                  onClick={() => setShowAlbumModal(true)}
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-rose-500 via-rose-400 to-pink-500 hover:from-rose-600 hover:to-pink-600 active:scale-[0.98] text-white font-extrabold text-xs rounded-xl shadow-md shadow-rose-200 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <ImageIcon className="h-4 w-4 shrink-0" />
+                  <span>Buka Album Kenangan ({photos.length} Foto)</span>
+                  <span className="inline-flex items-center justify-center bg-white/20 px-1.5 py-0.5 rounded-full text-[9px] font-black">🔍</span>
+                </button>
+                <p className="text-[10px] text-rose-400/80 font-semibold italic mt-0.5">
+                  Simpan momen pertama tabungan & kebersamaan kalian
+                </p>
+              </div>
+
+            </div>
+
+            {/* BLOCK 3: INFORMASI REKENING */}
+            <div id="block-informasi-rekening" className="relative bg-white/45 backdrop-blur-xl rounded-[32px] border border-rose-100/60 p-6 shadow-md shadow-rose-950/5 hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden">
+              {/* Badge label */}
+              <span className="text-[9px] font-mono font-extrabold tracking-widest text-rose-400/60 uppercase mb-4 block">03 / Informasi Rekening</span>
+
               <div className="flex items-center gap-2 mb-3 relative z-10">
-                <div className="p-1.5 bg-rose-50 rounded-lg text-rose-500 border border-rose-100/50">
-                  <Copy className="h-3.5 w-3.5" />
+                <div className="p-2 bg-rose-50 rounded-xl text-rose-500 border border-rose-100/40">
+                  <Copy className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[11px] font-black text-rose-900 uppercase tracking-wider">Informasi Rekening Bersama</h3>
-                  <p className="text-[9px] text-rose-500/70 font-semibold leading-none">Gunakan rekening ini untuk melakukan setor tabungan bersama</p>
+                  <h3 className="text-xs font-black text-rose-900 uppercase tracking-wider">Rekening Bersama</h3>
+                  <p className="text-[10px] text-[#8E7470] font-semibold leading-tight mt-0.5">Lakukan transfer ke rekening terdaftar di bawah ini</p>
                 </div>
                 {!isEditingAccount && (
                   <button
                     id="btn-edit-rekening"
                     type="button"
                     onClick={handleStartEditAccount}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-rose-100/70 hover:bg-rose-100 text-rose-700 hover:text-rose-800 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-white/80 hover:bg-rose-50 text-rose-700 hover:text-rose-800 text-[10px] font-extrabold rounded-lg transition-all border border-rose-100/60 cursor-pointer"
                     title="Edit Informasi Rekening"
                   >
                     <Edit2 className="h-3 w-3" />
@@ -651,21 +691,21 @@ export default function App() {
                   </div>
                 </form>
               ) : (
-                <div className="space-y-2 bg-white/70 backdrop-blur-xs p-3 rounded-xl border border-rose-100/30 relative z-10">
+                <div className="space-y-3 bg-white/55 p-4 rounded-2xl border border-rose-100/40 relative z-10">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-rose-600 font-bold text-[11px]">Bank</span>
-                    <span className="font-extrabold text-rose-950 text-[11px]">{config.bankName || 'Bank Syariah Indonesia (BSI)'}</span>
+                    <span className="text-rose-600/80 font-bold text-[11px]">Bank</span>
+                    <span className="font-extrabold text-rose-950 text-[12px]">{config.bankName || 'Bank Syariah Indonesia (BSI)'}</span>
                   </div>
                   
-                  <div className="flex justify-between items-center text-xs border-t border-rose-50/40 pt-2">
-                    <span className="text-rose-600 font-bold text-[11px]">Atas Nama (A/N)</span>
-                    <span className="font-extrabold text-rose-950 text-[11px]">{config.accountName || 'Bandar Sembiring'}</span>
+                  <div className="flex justify-between items-center text-xs border-t border-rose-100/30 pt-2.5">
+                    <span className="text-rose-600/80 font-bold text-[11px]">Pemilik (A/N)</span>
+                    <span className="font-extrabold text-rose-950 text-[12px]">{config.accountName || 'Bandar Sembiring'}</span>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-rose-50/40 pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-rose-100/30 pt-2.5">
                     <div className="flex flex-col">
                       <span className="text-[9px] text-rose-400 font-bold uppercase tracking-wider leading-none">Nomor Rekening</span>
-                      <span className="font-mono text-sm font-extrabold text-rose-900 tracking-wider mt-0.5 select-all">
+                      <span className="font-mono text-base font-extrabold text-rose-900 tracking-wider mt-1 select-all">
                         {config.accountNumber || '7141234567'}
                       </span>
                     </div>
@@ -674,16 +714,16 @@ export default function App() {
                       <button
                         type="button"
                         onClick={handleCopyAccountNumber}
-                        className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition-all shadow-sm cursor-pointer select-none"
+                        className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-xl text-[11px] font-extrabold flex items-center gap-1.5 transition-all shadow-md shadow-rose-200 cursor-pointer select-none"
                       >
                         {copied ? (
                           <>
-                            <Check className="h-3 w-3 animate-bounce" />
-                            <span>Berhasil Disalin!</span>
+                            <Check className="h-3.5 w-3.5 animate-bounce" />
+                            <span>Disalin!</span>
                           </>
                         ) : (
                           <>
-                            <Copy className="h-3 w-3" />
+                            <Copy className="h-3.5 w-3.5" />
                             <span>Salin Rekening</span>
                           </>
                         )}
@@ -706,291 +746,375 @@ export default function App() {
                 </div>
               )}
             </div>
+
           </div>
 
-          {/* Core Goal & Progress Track Area */}
-          <div className="px-6 py-5 bg-[#fffdfd] border-b border-rose-50/30">
-            <div className="flex justify-between items-baseline mb-2">
-              <div className="space-y-0.5">
-                <span className="text-[10px] uppercase font-extrabold text-rose-400 tracking-wider">Terkumpul Saat Ini</span>
-                <p className="text-2xl font-black text-rose-950 tracking-tight">
-                  {formatRupiah(totalSaved)}
-                </p>
+          {/* RIGHT COLUMN: Progres & Riwayat */}
+          <div className="md:col-span-1 lg:col-span-7 flex flex-col gap-6">
+
+            {/* BLOCK 2: PROGRES TABUNGAN */}
+            <div id="block-progres-tabungan" className="relative bg-white/45 backdrop-blur-xl rounded-[32px] border border-rose-100/60 p-6 shadow-md shadow-rose-950/5 hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden">
+              {/* Badge label */}
+              <span className="text-[9px] font-mono font-extrabold tracking-widest text-rose-400/60 uppercase mb-3 block">02 / Progres Goal</span>
+
+              {/* Progress metric headers */}
+              <div className="flex flex-col sm:flex-row justify-between items-baseline gap-2 mb-4">
+                <div className="space-y-0.5">
+                  <span className="text-[11px] uppercase font-bold text-rose-500 tracking-wider">Terkumpul Saat Ini</span>
+                  <p className="text-3xl font-black text-rose-950 tracking-tight">
+                    {formatRupiah(totalSaved)}
+                  </p>
+                </div>
+                <div className="sm:text-right space-y-0.5">
+                  <span className="text-[11px] uppercase font-bold text-rose-400 tracking-wider">Target Pernikahan</span>
+                  <p className="text-lg font-black text-rose-700">
+                    {formatRupiah(config.targetAmount).replace(',00', '')}
+                  </p>
+                </div>
               </div>
-              <div className="text-right space-y-0.5">
-                <span className="text-[10px] uppercase font-extrabold text-rose-400 tracking-wider">Target Goal</span>
-                <p className="text-sm font-bold text-rose-700">
-                  {formatRupiah(config.targetAmount).replace(',00', '')}
-                </p>
+
+              {/* Progress bar */}
+              <div className="relative w-full h-5 bg-rose-50/50 rounded-full overflow-hidden border border-rose-100 shadow-inner">
+                <motion.div
+                  id="progress-bar-fill"
+                  className="h-full bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 rounded-full relative"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercent}%` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
+                </motion.div>
               </div>
-            </div>
 
-            {/* Elegant Rounded Progress bar with animated completion spark */}
-            <div className="relative w-full h-4 bg-rose-50 rounded-full overflow-hidden border border-rose-100 shadow-inner">
-              <motion.div
-                id="progress-bar-fill"
-                className="h-full bg-gradient-to-r from-rose-400 via-pink-500 to-rose-600 rounded-full relative"
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-              >
-                {/* Glossy overlay effect */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
-              </motion.div>
-            </div>
-
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-xs font-bold text-rose-600">
-                {progressPercent.toFixed(1)}% Tercapai
-              </span>
-              <span className="text-[10px] text-rose-400 font-semibold italic">
-                {totalSaved >= config.targetAmount ? 'Alhamdulillah, Target Tercapai! 🎉' : `Kurang ${formatRupiah(config.targetAmount - totalSaved).replace(',00', '')}`}
-              </span>
-            </div>
-          </div>
-
-          {/* Quick tab switch bar */}
-          <div className="flex border-b border-rose-50 bg-rose-50/10">
-            <button
-              id="tab-setor"
-              onClick={() => setActiveTab('setor')}
-              className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
-                activeTab === 'setor'
-                  ? 'border-rose-600 text-rose-700 bg-white font-extrabold'
-                  : 'border-transparent text-rose-400 hover:text-rose-600'
-              }`}
-            >
-              <Coins className="h-4 w-4" />
-              <span>Setor</span>
-            </button>
-            <button
-              id="tab-riwayat"
-              onClick={() => setActiveTab('riwayat')}
-              className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
-                activeTab === 'riwayat'
-                  ? 'border-rose-600 text-rose-700 bg-white font-extrabold'
-                  : 'border-transparent text-rose-400 hover:text-rose-600'
-              }`}
-            >
-              <History className="h-4 w-4" />
-              <span>Riwayat</span>
-              {transactions.length > 0 && (
-                <span className="bg-rose-100 text-rose-700 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full">
-                  {transactions.length}
+              <div className="flex justify-between items-center mt-3 pb-4 border-b border-rose-100/30">
+                <span className="text-xs font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100/50 shadow-3xs">
+                  {progressPercent.toFixed(1)}% Tercapai
                 </span>
-              )}
-            </button>
-            <button
-              id="tab-album"
-              onClick={() => setActiveTab('album')}
-              className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
-                activeTab === 'album'
-                  ? 'border-rose-600 text-rose-700 bg-white font-extrabold'
-                  : 'border-transparent text-rose-400 hover:text-rose-600'
-              }`}
-            >
-              <ImageIcon className="h-4 w-4" />
-              <span>Album</span>
-              {photos.length > 0 && (
-                <span className="bg-rose-100 text-rose-700 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full">
-                  {photos.length}
+                <span className="text-[11px] text-[#8E7470] font-bold italic">
+                  {totalSaved >= config.targetAmount ? 'Alhamdulillah, Target Tercapai! 🎉' : `Kurang ${formatRupiah(config.targetAmount - totalSaved).replace(',00', '')}`}
                 </span>
-              )}
-            </button>
-            <button
-              id="tab-milestones"
-              onClick={() => setActiveTab('milestones')}
-              className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
-                activeTab === 'milestones'
-                  ? 'border-rose-600 text-rose-700 bg-white font-extrabold'
-                  : 'border-transparent text-rose-400 hover:text-rose-600'
-              }`}
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Milestone</span>
-            </button>
-            <button
-              id="tab-statistik"
-              onClick={() => setActiveTab('statistik')}
-              className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-all cursor-pointer ${
-                activeTab === 'statistik'
-                  ? 'border-rose-600 text-rose-700 bg-white font-extrabold'
-                  : 'border-transparent text-rose-400 hover:text-rose-600'
-              }`}
-            >
-              <TrendingUp className="h-4 w-4" />
-              <span>Analisa</span>
-            </button>
-          </div>
+              </div>
 
-          {/* Active Tab Panel */}
-          <div className="p-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {activeTab === 'setor' && (
-                  <TransactionForm 
-                    onAddTransaction={handleAddTransaction} 
-                    coupleName1={config.coupleName1}
-                    coupleName2={config.coupleName2}
-                  />
-                )}
-                
-                {activeTab === 'riwayat' && (
-                  <TransactionList
-                    transactions={transactions}
-                    onDeleteTransaction={handleDeleteTransaction}
-                    coupleName1={config.coupleName1}
-                    coupleName2={config.coupleName2}
-                  />
-                )}
+              {/* Inner card tabs for progress breakdown */}
+              <div className="flex gap-2.5 my-4 bg-rose-50/20 p-1.5 rounded-2xl border border-rose-100/40">
+                <button
+                  type="button"
+                  onClick={() => setActiveSavingsTab('progres')}
+                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                    activeSavingsTab === 'progres'
+                      ? 'bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-xs'
+                      : 'text-rose-500 hover:text-rose-800 hover:bg-rose-50/40'
+                  }`}
+                >
+                  Motivasi ✨
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSavingsTab('milestones')}
+                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                    activeSavingsTab === 'milestones'
+                      ? 'bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-xs'
+                      : 'text-rose-500 hover:text-rose-800 hover:bg-rose-50/40'
+                  }`}
+                >
+                  Milestone 🏆
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSavingsTab('statistik')}
+                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                    activeSavingsTab === 'statistik'
+                      ? 'bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-xs'
+                      : 'text-rose-500 hover:text-rose-800 hover:bg-rose-50/40'
+                  }`}
+                >
+                  Analisa 📈
+                </button>
+              </div>
 
-                {activeTab === 'album' && (
-                  <div className="space-y-6">
-                    {/* Header Galeri */}
-                    <div className="text-center pb-2">
-                      <div className="inline-flex p-3 bg-rose-50 rounded-full text-rose-500 mb-2">
-                        <ImageIcon className="h-6 w-6 animate-pulse" />
+              {/* Subtab Content Area */}
+              <div className="bg-white/45 p-4 rounded-2xl border border-rose-100/40 min-h-[220px]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSavingsTab}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {activeSavingsTab === 'progres' && (
+                      <div className="space-y-4 pt-1">
+                        <div className="p-4 bg-gradient-to-br from-[#FFF9F7] to-[#FAF2EF] rounded-2xl border border-rose-100/60 flex gap-3 shadow-3xs">
+                          <span className="text-3xl shrink-0">💝</span>
+                          <div className="space-y-1">
+                            <h4 className="text-xs font-black text-rose-950 uppercase tracking-wide">Pesan Kebersamaan</h4>
+                            <p className="text-xs text-[#8E7470] font-medium leading-relaxed">
+                              "Barangsiapa menikah, maka ia telah melengkapi separuh agamanya. Dan hendaklah ia bertakwa kepada Allah dalam memelihara separuh sisanya." (HR. Al-Baihaqi)
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-[#FFF9F7] to-[#FAF2EF] rounded-2xl border border-rose-100/60 flex gap-3 shadow-3xs">
+                          <span className="text-3xl shrink-0">📊</span>
+                          <div className="space-y-1">
+                            <h4 className="text-xs font-black text-rose-950 uppercase tracking-wide">Kecepatan Menabung</h4>
+                            <p className="text-xs text-[#8E7470] font-medium leading-relaxed">
+                              Hingga hari ini kalian telah mencatatkan <span className="font-extrabold text-rose-600">{transactions.length} setoran</span> dengan rata-rata nominal tabungan sebesar <span className="font-extrabold text-rose-600">{formatRupiah(transactions.length > 0 ? totalSaved / transactions.length : 0).replace(',00', '')}</span> per transaksi.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <h3 className="text-xl font-black text-rose-950">Album Kenangan Kita</h3>
-                      <p className="text-xs text-rose-500 font-medium max-w-sm mx-auto mt-1">
-                        Koleksi momen indah {config.coupleName1} & {config.coupleName2}. Foto tersimpan otomatis di HP kalian berdua! 💕
-                      </p>
-                    </div>
+                    )}
 
-                    {/* Upload Section */}
-                    <div className="bg-rose-50/10 border border-rose-100/40 rounded-3xl p-4">
-                      <label className="relative flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-rose-200 hover:border-rose-400 bg-white hover:bg-rose-50/30 rounded-2xl cursor-pointer transition-all duration-300 group">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-5 text-center px-4">
-                          {isPhotoUploading ? (
-                            <div className="flex flex-col items-center gap-1.5">
-                              <div className="h-6 w-6 border-3 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
-                              <p className="text-xs font-bold text-rose-600 mt-1">Mengunggah Kenangan Indah...</p>
-                              <p className="text-[10px] text-rose-400 font-medium">Foto sedang disinkronkan ke cloud ✨</p>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="p-2 bg-rose-50 rounded-full text-rose-400 group-hover:text-rose-500 transition-colors">
-                                <Camera className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                              </div>
-                              <p className="text-xs font-extrabold text-rose-700 mt-2">Pilih Foto dari Galeri HP Anda</p>
-                              <p className="text-[9px] text-rose-400 font-semibold mt-0.5">Disimpan aman di cloud Firebase & terkirim ke pasangan</p>
-                            </>
-                          )}
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleAddPhoto(file);
-                            }
-                          }}
-                          disabled={isPhotoUploading}
-                        />
-                      </label>
-                    </div>
+                    {activeSavingsTab === 'milestones' && (
+                      <MilestoneTimeline 
+                        totalSaved={totalSaved} 
+                        coupleName1={config.coupleName1}
+                        coupleName2={config.coupleName2}
+                      />
+                    )}
 
-                    {/* Photo Grid */}
-                    <div>
-                      {photos.length === 0 ? (
-                        <div className="text-center py-12 px-6 bg-rose-50/20 rounded-3xl border border-dashed border-rose-100">
-                          <span role="img" aria-label="love-camera" className="text-4xl block mb-2">📸</span>
-                          <h4 className="text-sm font-bold text-rose-900">Belum ada foto album</h4>
-                          <p className="text-xs text-rose-400 font-medium italic mt-1 max-w-xs mx-auto">
-                            Klik tombol pilih foto di atas untuk mulai mengabadikan momen pertama bersama! 💕
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3" id="gallery-photo-grid">
-                          <AnimatePresence>
-                            {photos.map((photo) => (
-                              <motion.div
-                                key={photo.id}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="relative group rounded-2xl overflow-hidden bg-white border border-rose-100/50 shadow-sm flex flex-col hover:shadow-md transition-all duration-300"
-                              >
-                                {/* Image container with cursor pointer to open lightbox */}
-                                <div 
-                                  onClick={() => setSelectedPhoto(photo.url)}
-                                  className="aspect-square w-full overflow-hidden relative bg-rose-50/10 cursor-zoom-in"
-                                  title="Klik untuk memperbesar foto"
-                                >
-                                  <img
-                                    src={photo.url}
-                                    alt="Kenangan Indah"
-                                    loading="lazy"
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                  />
-                                  {/* Hover overlay indicator */}
-                                  <div className="absolute inset-0 bg-rose-950/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                    <span className="text-[10px] text-white font-bold bg-rose-600/80 px-2.5 py-1 rounded-full backdrop-blur-xs">Lihat Foto 🔍</span>
-                                  </div>
-                                </div>
-                                
-                                {/* Info bar */}
-                                <div className="p-2.5 bg-white flex justify-between items-center border-t border-rose-50/50">
-                                  <span className="text-[10px] text-rose-400 font-bold">
-                                    {new Date(photo.createdAt).toLocaleDateString('id-ID', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric'
-                                    })}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeletePhoto(photo)}
-                                    className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                                    title="Hapus Foto"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                    {activeSavingsTab === 'statistik' && (
+                      <SavingsStats
+                        transactions={transactions}
+                        coupleName1={config.coupleName1}
+                        coupleName2={config.coupleName2}
+                        targetAmount={config.targetAmount}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
-                {activeTab === 'milestones' && (
-                  <MilestoneTimeline 
-                    totalSaved={totalSaved} 
-                    coupleName1={config.coupleName1}
-                    coupleName2={config.coupleName2}
-                  />
-                )}
+            </div>
 
-                {activeTab === 'statistik' && (
-                  <SavingsStats
-                    transactions={transactions}
-                    coupleName1={config.coupleName1}
-                    coupleName2={config.coupleName2}
-                    targetAmount={config.targetAmount}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
+            {/* BLOCK 4: RIWAYAT TRANSAKSI */}
+            <div id="block-riwayat-transaksi" className="relative bg-white/45 backdrop-blur-xl rounded-[32px] border border-rose-100/60 p-6 shadow-md shadow-rose-950/5 hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden">
+              {/* Badge label */}
+              <span className="text-[9px] font-mono font-extrabold tracking-widest text-rose-400/60 uppercase mb-3 block">04 / Catatan Transaksi</span>
+
+              {/* Subtabs for setoran/riwayat */}
+              <div className="flex gap-2.5 mb-5 bg-rose-50/20 p-1.5 rounded-2xl border border-rose-100/40">
+                <button
+                  type="button"
+                  onClick={() => setActiveTransactionTab('catat')}
+                  className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    activeTransactionTab === 'catat'
+                      ? 'bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-xs'
+                      : 'text-rose-500 hover:text-rose-800 hover:bg-rose-50/40'
+                  }`}
+                >
+                  <Coins className="h-4 w-4" />
+                  <span>Setor Tabungan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTransactionTab('riwayat')}
+                  className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    activeTransactionTab === 'riwayat'
+                      ? 'bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-xs'
+                      : 'text-rose-500 hover:text-rose-800 hover:bg-rose-50/40'
+                  }`}
+                >
+                  <History className="h-4 w-4" />
+                  <span>Riwayat Setoran</span>
+                  {transactions.length > 0 && (
+                    <span className="inline-flex items-center justify-center bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-0.5 rounded-full shadow-3xs">
+                      {transactions.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Subtab content list/form */}
+              <div className="bg-white/45 p-4 rounded-2xl border border-rose-100/40 min-h-[300px]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTransactionTab}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {activeTransactionTab === 'catat' && (
+                      <TransactionForm 
+                        onAddTransaction={handleAddTransaction} 
+                        coupleName1={config.coupleName1}
+                        coupleName2={config.coupleName2}
+                      />
+                    )}
+
+                    {activeTransactionTab === 'riwayat' && (
+                      <TransactionList
+                        transactions={transactions}
+                        onDeleteTransaction={handleDeleteTransaction}
+                        coupleName1={config.coupleName1}
+                        coupleName2={config.coupleName2}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+
           </div>
 
         </div>
-
-        {/* Footer info brand */}
-        <p className="text-center text-[11px] text-rose-400 font-semibold tracking-wide mt-6">
-          Dibuat dengan ❤️ untuk Bandar & Selly • Menuju Sakinah Mawaddah Warahmah
-        </p>
       </div>
+
+      {/* Brand Footer */}
+      <footer className="w-full text-center relative z-10 max-w-5xl mt-4 px-4 pb-4">
+        <p className="text-[11px] text-[#9C7F7B] font-extrabold tracking-wider uppercase leading-none">
+          Dibuat dengan ❤️ untuk {config.coupleName1} & {config.coupleName2}
+        </p>
+        <p className="text-[10px] text-rose-400/80 font-bold italic mt-1">
+          Menuju Keluarga Sakinah Mawaddah Warahmah
+        </p>
+      </footer>
+
+      {/* Album Kenangan Modal Overlay */}
+      <AnimatePresence>
+        {showAlbumModal && (
+          <div className="fixed inset-0 bg-rose-950/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white/95 backdrop-blur-xl rounded-[32px] border border-rose-100/80 max-w-3xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+              id="album-modal"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowAlbumModal(false)}
+                className="absolute top-5 right-5 p-1.5 bg-rose-50 hover:bg-rose-100 rounded-full text-rose-400 hover:text-rose-600 transition-colors cursor-pointer z-10"
+              >
+                <X className="h-4.5 w-4.5" />
+              </button>
+
+              {/* Header Galeri */}
+              <div className="text-center pb-4 border-b border-rose-100/40 mb-6">
+                <div className="inline-flex p-3 bg-rose-50 rounded-full text-rose-500 mb-2">
+                  <ImageIcon className="h-6 w-6 animate-pulse" />
+                </div>
+                <h3 className="text-xl font-black text-rose-950">Album Kenangan Kita 💖</h3>
+                <p className="text-xs text-[#8E7470] font-medium max-w-md mx-auto mt-1">
+                  Koleksi foto indah {config.coupleName1} & {config.coupleName2}. Foto tersimpan otomatis di awan cloud & tersambung langsung ke HP kalian berdua!
+                </p>
+              </div>
+
+              {/* Upload Section */}
+              <div className="bg-[#FAF0ED] border border-rose-100/50 rounded-2xl p-4 mb-6">
+                <label className="relative flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-rose-200 hover:border-rose-400 bg-white hover:bg-rose-50/30 rounded-xl cursor-pointer transition-all duration-300 group">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-5 text-center px-4">
+                    {isPhotoUploading ? (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <div className="h-6 w-6 border-3 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-xs font-bold text-rose-600 mt-1">Mengunggah Kenangan Indah...</p>
+                        <p className="text-[10px] text-rose-400 font-medium">Foto sedang disinkronkan ke cloud ✨</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="p-2 bg-rose-50 rounded-full text-rose-400 group-hover:text-rose-500 transition-colors">
+                          <Camera className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+                        </div>
+                        <p className="text-xs font-extrabold text-rose-700 mt-2">Pilih Foto dari Galeri HP Anda</p>
+                        <p className="text-[9px] text-[#8E7470] font-semibold mt-0.5">Disimpan aman di cloud Firebase & terkirim ke pasangan</p>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleAddPhoto(file);
+                      }
+                    }}
+                    disabled={isPhotoUploading}
+                  />
+                </label>
+              </div>
+
+              {/* Photo Grid */}
+              <div className="max-h-[40vh] overflow-y-auto pr-1">
+                {photos.length === 0 ? (
+                  <div className="text-center py-12 px-6 bg-rose-50/20 rounded-2xl border border-dashed border-rose-100">
+                    <span role="img" aria-label="love-camera" className="text-4xl block mb-2">📸</span>
+                    <h4 className="text-sm font-bold text-rose-900">Belum ada foto album</h4>
+                    <p className="text-xs text-[#8E7470] font-medium italic mt-1 max-w-xs mx-auto">
+                      Pilih foto di atas untuk mulai mengabadikan momen pertama bersama! 💕
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4" id="gallery-photo-grid">
+                    <AnimatePresence>
+                      {photos.map((photo) => (
+                        <motion.div
+                          key={photo.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="relative group rounded-xl overflow-hidden bg-white border border-rose-100/40 shadow-xs flex flex-col hover:shadow-md transition-all duration-300"
+                        >
+                          {/* Image container */}
+                          <div 
+                            onClick={() => {
+                              setSelectedPhoto(photo.url);
+                            }}
+                            className="aspect-square w-full overflow-hidden relative bg-rose-50/10 cursor-zoom-in"
+                            title="Klik untuk memperbesar"
+                          >
+                            <img
+                              src={photo.url}
+                              alt="Kenangan Indah"
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-rose-950/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                              <span className="text-[9px] text-white font-bold bg-rose-600/80 px-2 py-0.5 rounded-full backdrop-blur-xs">Lihat 🔍</span>
+                            </div>
+                          </div>
+                          
+                          {/* Info bar */}
+                          <div className="p-2 bg-white flex justify-between items-center border-t border-rose-50/50">
+                            <span className="text-[9px] text-[#8E7470] font-bold">
+                              {new Date(photo.createdAt).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePhoto(photo)}
+                              className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                              title="Hapus Foto"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom info */}
+              <div className="text-center mt-6 pt-4 border-t border-rose-100/40">
+                <button
+                  type="button"
+                  onClick={() => setShowAlbumModal(false)}
+                  className="py-2.5 px-6 bg-[#B7847E] hover:bg-[#A6746F] text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shadow-rose-200"
+                >
+                  Selesai & Tutup Album ✨
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Settings Dialog Overlay */}
       <AnimatePresence>
