@@ -46,6 +46,20 @@
         }
       },
       "required": ["amount", "depositor", "category", "note", "date"]
+    },
+    "GalleryPhoto": {
+      "title": "GalleryPhoto",
+      "description": "A photo in the couple memory gallery.",
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": ["url", "createdAt"]
     }
   },
   "firestore": {
@@ -56,6 +70,10 @@
     "transactions/{transactionId}": {
       "schema": "Transaction",
       "description": "The list of savings transactions."
+    },
+    "photos/{photoId}": {
+      "schema": "GalleryPhoto",
+      "description": "The memory gallery photos."
     }
   }
 }

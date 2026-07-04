@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Transaction, AppConfig } from './types';
+import { Transaction, AppConfig, GalleryPhoto } from './types';
 import { formatRupiah, getDaysRemaining } from './utils';
 import TransactionForm from './components/TransactionForm';
 import TransactionList from './components/TransactionList';
@@ -17,7 +17,10 @@ import {
   X, 
   Check, 
   Smile,
-  Edit2
+  Edit2,
+  Image as ImageIcon,
+  Trash2,
+  Camera
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, doc, onSnapshot, setDoc, addDoc, deleteDoc } from 'firebase/firestore';
@@ -71,7 +74,9 @@ interface HeartConfetti {
 export default function App() {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'setor' | 'riwayat' | 'milestones' | 'statistik'>('setor');
   const [showSettings, setShowSettings] = useState(false);
@@ -127,6 +132,7 @@ export default function App() {
 
       // Seed with beautiful starter records if empty
       if (querySnapshot.empty && items.length === 0) {
+        setIsLoading(false);
         DEFAULT_TRANSACTIONS.forEach((t) => {
           setDoc(doc(db, 'transactions', t.id), {
             amount: t.amount,
@@ -146,9 +152,28 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'transactions');
     });
 
+    const photosColRef = collection(db, 'photos');
+    const unsubscribePhotos = onSnapshot(photosColRef, (querySnapshot) => {
+      const items: GalleryPhoto[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        items.push({
+          id: doc.id,
+          url: data.url,
+          createdAt: data.createdAt
+        });
+      });
+      // Sort newest first
+      items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setPhotos(items);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'photos');
+    });
+
     return () => {
       unsubscribeConfig();
       unsubscribeTransactions();
+      unsubscribePhotos();
     };
   }, []);
 
@@ -192,6 +217,69 @@ export default function App() {
       await deleteDoc(doc(db, 'transactions', id));
     } catch (e) {
       handleFirestoreError(e, OperationType.DELETE, `transactions/${id}`);
+    }
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 800; // max dimension to fit comfortably within Firestore 1MB limits
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6)); // compress to jpeg at 0.6 quality (creates beautiful, small base64)
+          } else {
+            resolve(e.target?.result as string);
+          }
+        };
+        img.onerror = () => reject(new Error('Gagal memuat file gambar'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Gagal membaca file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAddPhoto = async (file: File) => {
+    setIsPhotoUploading(true);
+    try {
+      const compressedUrl = await compressImage(file);
+      await addDoc(collection(db, 'photos'), {
+        url: compressedUrl,
+        createdAt: new Date().toISOString()
+      });
+      triggerConfetti();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, 'photos');
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'photos', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `photos/${id}`);
     }
   };
 
@@ -435,11 +523,112 @@ export default function App() {
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === 'setor' && (
-                  <TransactionForm 
-                    onAddTransaction={handleAddTransaction} 
-                    coupleName1={config.coupleName1}
-                    coupleName2={config.coupleName2}
-                  />
+                  <div className="space-y-6">
+                    <TransactionForm 
+                      onAddTransaction={handleAddTransaction} 
+                      coupleName1={config.coupleName1}
+                      coupleName2={config.coupleName2}
+                    />
+
+                    {/* Galeri Kenangan Section */}
+                    <div className="pt-6 border-t border-rose-100/60" id="memory-gallery-section">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-rose-50 rounded-lg text-rose-500">
+                          <ImageIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold text-rose-950">Galeri Kenangan Kita</h3>
+                          <p className="text-[11px] text-rose-500/70 font-medium">Koleksi kenangan indah {config.coupleName1} & {config.coupleName2} langsung di HP</p>
+                        </div>
+                      </div>
+
+                      {/* Upload Button Component */}
+                      <div className="mt-3">
+                        <label className="relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-rose-200 hover:border-rose-400 bg-rose-50/20 hover:bg-rose-50/50 rounded-2xl cursor-pointer transition-all duration-300 group">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                            {isPhotoUploading ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="h-5 w-5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+                                <p className="text-xs font-bold text-rose-600 mt-1">Mengompres & Menyimpan...</p>
+                              </div>
+                            ) : (
+                              <>
+                                <Camera className="h-6 w-6 text-rose-400 group-hover:text-rose-600 group-hover:scale-110 transition-all duration-300" />
+                                <p className="text-xs font-bold text-rose-600 mt-1.5">Pilih Foto Kenangan dari HP</p>
+                                <p className="text-[9px] text-rose-400 font-medium mt-0.5 font-sans">Format JPG/PNG • Otomatis diperkecil</p>
+                              </>
+                            )}
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleAddPhoto(file);
+                              }
+                            }}
+                            disabled={isPhotoUploading}
+                          />
+                        </label>
+                      </div>
+
+                      {/* Photo Grid */}
+                      <div className="mt-4">
+                        {photos.length === 0 ? (
+                          <div className="text-center py-6 px-4 bg-rose-50/30 rounded-2xl border border-dashed border-rose-100">
+                            <span role="img" aria-label="love-camera" className="text-2xl block mb-1">📸</span>
+                            <p className="text-xs font-bold text-rose-700">Belum ada foto kenangan</p>
+                            <p className="text-[10px] text-rose-400 font-medium italic mt-0.5">Yuk, pilih foto pertama kita berdua di atas! 💕</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3" id="gallery-photo-grid">
+                            <AnimatePresence>
+                              {photos.map((photo) => (
+                                <motion.div
+                                  key={photo.id}
+                                  initial={{ opacity: 0, scale: 0.9 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.9 }}
+                                  className="relative group rounded-2xl overflow-hidden bg-rose-50/20 border border-rose-100/50 shadow-xs flex flex-col"
+                                >
+                                  {/* Image container */}
+                                  <div className="aspect-square w-full overflow-hidden relative bg-rose-100/30">
+                                    <img
+                                      src={photo.url}
+                                      alt="Kenangan Indah"
+                                      loading="lazy"
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                  </div>
+                                  
+                                  {/* Delete Bar / Info bar */}
+                                  <div className="p-2 bg-white flex justify-between items-center border-t border-rose-50/50">
+                                    <span className="text-[9px] text-rose-400/80 font-bold">
+                                      {new Date(photo.createdAt).toLocaleDateString('id-ID', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: '2-digit'
+                                      })}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeletePhoto(photo.id)}
+                                      className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Hapus Foto"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
                 
                 {activeTab === 'riwayat' && (

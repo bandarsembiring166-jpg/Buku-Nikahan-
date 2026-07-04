@@ -22,3 +22,10 @@ export interface AppConfig {
   targetDate: string; // YYYY-MM-DD
   photoUrl: string;
 }
+
+export interface GalleryPhoto {
+  id: string;
+  url: string;
+  createdAt: string; // ISO String
+}
+
