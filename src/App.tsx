@@ -564,11 +564,7 @@ export default function App() {
                 Menabung Bersama Menuju Hari Bahagia ✨
               </p>
 
-              {/* Countdown badge */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-rose-100/40 rounded-full text-rose-700 text-[11px] font-extrabold mt-4 shadow-3xs">
-                <Calendar className="h-3.5 w-3.5 text-rose-400 shrink-0" />
-                <span>{daysRemaining > 0 ? `${daysRemaining} Hari Menuju Akad Nikah 💍` : 'Semoga Sakinah Mawaddah Warahmah! ❤️'}</span>
-              </div>
+
 
               {/* Open Album Button */}
               <div className="w-full mt-6 border-t border-rose-100/30 pt-5 flex flex-col gap-2">
