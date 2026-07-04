@@ -20,7 +20,8 @@ import {
   Edit2,
   Image as ImageIcon,
   Trash2,
-  Camera
+  Camera,
+  Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, doc, onSnapshot, setDoc, addDoc, deleteDoc } from 'firebase/firestore';
@@ -60,7 +61,10 @@ const DEFAULT_CONFIG: AppConfig = {
   coupleName2: 'Selly',
   targetAmount: 20000000,
   targetDate: '2026-12-31',
-  photoUrl: ''
+  photoUrl: '',
+  bankName: 'Bank Syariah Indonesia (BSI)',
+  accountNumber: '7141234567',
+  accountName: 'Bandar Sembiring'
 };
 
 interface HeartConfetti {
@@ -83,6 +87,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [confettis, setConfettis] = useState<HeartConfetti[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Temp form states for settings
   const [tempName1, setTempName1] = useState(config.coupleName1);
@@ -90,6 +95,9 @@ export default function App() {
   const [tempTarget, setTempTarget] = useState(config.targetAmount.toString());
   const [tempDate, setTempDate] = useState(config.targetDate);
   const [tempPhotoUrl, setTempPhotoUrl] = useState(config.photoUrl);
+  const [tempBankName, setTempBankName] = useState(config.bankName || 'Bank Syariah Indonesia (BSI)');
+  const [tempAccountNumber, setTempAccountNumber] = useState(config.accountNumber || '7141234567');
+  const [tempAccountName, setTempAccountName] = useState(config.accountName || 'Bandar Sembiring');
 
   // Sync with Firestore Real-time
   useEffect(() => {
@@ -97,13 +105,20 @@ export default function App() {
     const unsubscribeConfig = onSnapshot(configDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as AppConfig;
-        setConfig(data);
+        const mergedData: AppConfig = {
+          ...DEFAULT_CONFIG,
+          ...data
+        };
+        setConfig(mergedData);
         // Pre-fill temp state if loaded
-        setTempName1(data.coupleName1);
-        setTempName2(data.coupleName2);
-        setTempTarget(data.targetAmount.toString());
-        setTempDate(data.targetDate);
-        setTempPhotoUrl(data.photoUrl);
+        setTempName1(mergedData.coupleName1);
+        setTempName2(mergedData.coupleName2);
+        setTempTarget(mergedData.targetAmount.toString());
+        setTempDate(mergedData.targetDate);
+        setTempPhotoUrl(mergedData.photoUrl);
+        setTempBankName(mergedData.bankName);
+        setTempAccountNumber(mergedData.accountNumber);
+        setTempAccountName(mergedData.accountName);
       } else {
         // Create the initial config document if it doesn't exist
         setDoc(configDocRef, DEFAULT_CONFIG).catch((error) => {
@@ -312,6 +327,16 @@ export default function App() {
     }
   };
 
+  const handleCopyAccountNumber = () => {
+    const accNum = config.accountNumber || '7141234567';
+    navigator.clipboard.writeText(accNum).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch((err) => {
+      console.error('Gagal menyalin nomor rekening:', err);
+    });
+  };
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     const newTarget = parseFloat(tempTarget);
@@ -322,7 +347,10 @@ export default function App() {
       coupleName2: tempName2.trim() || 'Selly',
       targetAmount: newTarget,
       targetDate: tempDate,
-      photoUrl: tempPhotoUrl.trim()
+      photoUrl: tempPhotoUrl.trim(),
+      bankName: tempBankName.trim() || 'Bank Syariah Indonesia (BSI)',
+      accountNumber: tempAccountNumber.trim() || '7141234567',
+      accountName: tempAccountName.trim() || 'Bandar Sembiring'
     };
 
     try {
@@ -342,6 +370,9 @@ export default function App() {
       setTempTarget(config.targetAmount.toString());
       setTempDate(config.targetDate);
       setTempPhotoUrl(config.photoUrl);
+      setTempBankName(config.bankName || 'Bank Syariah Indonesia (BSI)');
+      setTempAccountNumber(config.accountNumber || '7141234567');
+      setTempAccountName(config.accountName || 'Bandar Sembiring');
     }
   }, [showSettings, config]);
 
@@ -440,6 +471,78 @@ export default function App() {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-100/40 rounded-full text-rose-600 text-[11px] font-bold mt-3 shadow-xs">
               <Calendar className="h-3.5 w-3.5" />
               <span>{daysRemaining > 0 ? `${daysRemaining} Hari Menuju Akad Nikah 💍` : 'Semoga Menjadi Keluarga Sakinah Mawaddah Warahmah! ❤️'}</span>
+            </div>
+
+            {/* Informasi Rekening Bersama Card */}
+            <div className="mt-5 mx-2 p-4 rounded-2xl bg-amber-50/30 border border-rose-100/40 text-left relative overflow-hidden shadow-xs">
+              {/* Background soft glowing heart deco */}
+              <div className="absolute -right-2 -bottom-2 text-rose-200/10 text-6xl pointer-events-none font-bold select-none">
+                💝
+              </div>
+              
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <div className="p-1.5 bg-rose-50 rounded-lg text-rose-500 border border-rose-100/50">
+                  <Copy className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <h3 className="text-[11px] font-black text-rose-900 uppercase tracking-wider">Informasi Rekening Bersama</h3>
+                  <p className="text-[9px] text-rose-500/70 font-semibold leading-none">Gunakan rekening ini untuk melakukan setor tabungan bersama</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 bg-white/70 backdrop-blur-xs p-3 rounded-xl border border-rose-100/30 relative z-10">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-rose-600 font-bold text-[11px]">Bank</span>
+                  <span className="font-extrabold text-rose-950 text-[11px]">{config.bankName || 'Bank Syariah Indonesia (BSI)'}</span>
+                </div>
+                
+                <div className="flex justify-between items-center text-xs border-t border-rose-50/40 pt-2">
+                  <span className="text-rose-600 font-bold text-[11px]">Atas Nama (A/N)</span>
+                  <span className="font-extrabold text-rose-950 text-[11px]">{config.accountName || 'Bandar Sembiring'}</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-rose-50/40 pt-2">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-rose-400 font-bold uppercase tracking-wider leading-none">Nomor Rekening</span>
+                    <span className="font-mono text-sm font-extrabold text-rose-900 tracking-wider mt-0.5 select-all">
+                      {config.accountNumber || '7141234567'}
+                    </span>
+                  </div>
+                  
+                  <div className="relative self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={handleCopyAccountNumber}
+                      className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition-all shadow-sm cursor-pointer select-none"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-3 w-3 animate-bounce" />
+                          <span>Berhasil Disalin!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3" />
+                          <span>Salin Rekening</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    <AnimatePresence>
+                      {copied && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                          className="absolute bottom-full right-0 mb-1.5 px-2 py-1 bg-rose-950 text-white text-[9px] font-extrabold rounded-md shadow-md whitespace-nowrap z-20 pointer-events-none"
+                        >
+                          Teks Disalin ke HP! 💖
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -814,6 +917,54 @@ export default function App() {
                   <p className="text-[10px] text-rose-400 mt-1 italic leading-tight">
                     Biarkan kosong untuk menggunakan avatar ilustrasi bawaan yang menggemaskan.
                   </p>
+                </div>
+
+                {/* Joint Account Section in Settings */}
+                <div className="border-t border-rose-100/50 pt-3.5 space-y-3">
+                  <div className="flex items-center gap-1.5 text-rose-800 font-extrabold text-[13px] uppercase tracking-wider mb-1">
+                    <span role="img" aria-label="bank">💳</span>
+                    <span>Informasi Rekening Bersama</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="settings-bank" className="block text-[11px] font-bold text-rose-700 mb-1">Nama Bank</label>
+                      <input
+                        id="settings-bank"
+                        type="text"
+                        value={tempBankName}
+                        onChange={(e) => setTempBankName(e.target.value)}
+                        placeholder="Contoh: BSI, BCA, Mandiri"
+                        className="w-full px-3 py-2 border border-rose-100 rounded-xl text-rose-950 text-xs focus:border-rose-300 focus:outline-none transition-all font-semibold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="settings-accname" className="block text-[11px] font-bold text-rose-700 mb-1">Pemilik Rekening</label>
+                      <input
+                        id="settings-accname"
+                        type="text"
+                        value={tempAccountName}
+                        onChange={(e) => setTempAccountName(e.target.value)}
+                        placeholder="Contoh: Bandar Sembiring"
+                        className="w-full px-3 py-2 border border-rose-100 rounded-xl text-rose-950 text-xs focus:border-rose-300 focus:outline-none transition-all font-semibold"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="settings-accnum" className="block text-[11px] font-bold text-rose-700 mb-1">Nomor Rekening</label>
+                    <input
+                      id="settings-accnum"
+                      type="text"
+                      value={tempAccountNumber}
+                      onChange={(e) => setTempAccountNumber(e.target.value)}
+                      placeholder="Contoh: 7141234567"
+                      className="w-full px-3 py-2 border border-rose-100 rounded-xl text-rose-950 text-xs font-mono font-bold tracking-wider focus:border-rose-300 focus:outline-none transition-all"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="flex gap-2.5 pt-2 border-t border-rose-50">

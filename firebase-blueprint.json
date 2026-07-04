@@ -19,9 +19,18 @@
         },
         "photoUrl": {
           "type": "string"
+        },
+        "bankName": {
+          "type": "string"
+        },
+        "accountNumber": {
+          "type": "string"
+        },
+        "accountName": {
+          "type": "string"
         }
       },
-      "required": ["coupleName1", "coupleName2", "targetAmount", "targetDate", "photoUrl"]
+      "required": ["coupleName1", "coupleName2", "targetAmount", "targetDate", "photoUrl", "bankName", "accountNumber", "accountName"]
     },
     "Transaction": {
       "title": "Transaction",

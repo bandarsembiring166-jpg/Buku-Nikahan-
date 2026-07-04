@@ -22,12 +22,15 @@ service cloud.firestore {
     // AppConfig validator
     function isValidAppConfig(data) {
       return data.keys().hasAll(['coupleName1', 'coupleName2', 'targetAmount', 'targetDate', 'photoUrl'])
-        && data.keys().size() == 5
+        && (data.keys().size() == 5 || (data.keys().size() == 8 && data.keys().hasAll(['bankName', 'accountNumber', 'accountName'])))
         && data.coupleName1 is string && data.coupleName1.size() <= 100
         && data.coupleName2 is string && data.coupleName2.size() <= 100
         && (data.targetAmount is int || data.targetAmount is float) && data.targetAmount >= 0
         && data.targetDate is string && data.targetDate.size() <= 50
-        && data.photoUrl is string && data.photoUrl.size() <= 2000;
+        && data.photoUrl is string && data.photoUrl.size() <= 2000
+        && (!data.keys().hasAll(['bankName']) || (data.bankName is string && data.bankName.size() <= 200))
+        && (!data.keys().hasAll(['accountNumber']) || (data.accountNumber is string && data.accountNumber.size() <= 100))
+        && (!data.keys().hasAll(['accountName']) || (data.accountName is string && data.accountName.size() <= 200));
     }
 
     // Transaction validator

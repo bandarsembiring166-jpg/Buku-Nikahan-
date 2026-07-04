@@ -21,6 +21,9 @@ export interface AppConfig {
   targetAmount: number;
   targetDate: string; // YYYY-MM-DD
   photoUrl: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
 }
 
 export interface GalleryPhoto {
